@@ -1,0 +1,13 @@
+.ssh/id_rsa
+test2.txt
+.bash_history
+.bashrc
+.cache/
+.gitconfig
+.lvm_history
+.profile
+.selected_editor
+.ssh/
+.viminfo
+.wget-hsts
+snap/
