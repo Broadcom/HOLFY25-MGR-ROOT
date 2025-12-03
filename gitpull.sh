@@ -1,5 +1,5 @@
-#! /bin/sh
-# version 1.1 - 11-October 2024
+#! /bin/bash
+# version 1.2 - 12-December 2025
 
 # the only job of this script is to do the initial git pull for the root account
 
@@ -8,43 +8,44 @@
 
 # initialize the logfile
 logfile='/tmp/mount.log'
-> ${logfile}
+statusdir='/lmchol/hol'
+startupstatus="${statusdir}/startup_status.txt"
+gitproject='HOLUSER'
+echo "Initializing log file" > "${logfile}"
 
-cd /root
+cd /root || exit
 
-internalgit=10.138.147.254
-externalgit=holgitlab.oc.vmware.com
+# Wait for the proxy to become available.
+echo "Waiting for proxy to be ready..." >> "${logfile}"
+while ! nc -z proxy 3128; do
+   echo "Proxy not ready, retrying in 5 seconds..." >> "${logfile}"
+   sleep 5
+done
+echo "Proxy is ready." >> "${logfile}"
 
-status=`ssh -o ConnectTimeout=5 -T git@$internalgit`
-if [ $? != 0 ];then
-   repodir='/root/.git'
-   cat /root/.git/config | sed s/$internalgit/$externalgit/g > /root/.git/newconfig
-      mv /root/.git/config /root/.git/oldconfig
-      mv /root/.git/newconfig /root/.git/config
-      chmod 664 /root/.git/config
-fi
-
+# Attempt to pull the latest changes from git.
 ctr=0
-while true;do
-   if [ $ctr -gt 30 ];then
-      echo "FATAL could not perform git pull." >> ${logfile}
-      exit  # do we exit here or just report?
+while true; do
+   if [[ "${ctr}" -gt 30 ]]; then
+      echo "FATAL: Could not perform git pull after multiple attempts." >> "${logfile}"
+      exit 1
    fi
-   git pull origin master >> ${logfile} 2>&1
-   if [ $? = 0 ];then
-      > /tmp/rootgitdone
+
+   if git pull origin main >> "${logfile}" 2>&1; then
+      echo "Git pull successful." >> "${logfile}"
+      # Create a flag file to indicate success.
+      touch /tmp/rootgitdone
       break
    else
-      gitresult=`grep 'could not be found' ${logfile}`
-      if [ $? = 0 ];then
-         echo "The git project ${gitproject} does not exist." >> ${logfile}
-         echo "FAIL - No GIT Project" > $startupstatus
+      if grep -q 'could not be found' "${logfile}"; then
+         echo "The git project ${gitproject} does not exist." >> "${logfile}"
+         mkdir -p "${statusdir}"
+         echo "FAIL - No GIT Project" > "${startupstatus}"
          exit 1
       else
-         echo "Could not complete git pull. Will try again." >> ${logfile}
+         echo "Could not complete git pull. Will try again." >> "${logfile}"
       fi
-  fi
-  ctr=`expr $ctr + 1`
+   fi
+  ((ctr++))
   sleep 5
 done
-

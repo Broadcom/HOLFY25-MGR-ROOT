@@ -1,6 +1,7 @@
 #!/bin/bash
-# version 1.6 23-February 2024
-# version 1.7 19-November 2025 - switch to bash, update `command` to $(command) syntax
+# version 1.6 2024-02-23 - original version
+# version 1.7 2025-11-19 - switch to bash, update `command` to $(command) syntax
+# version 1.8 2025-12-03 - switch to pgrep, update grep syntax
 # restartlsmgr.sh restarts the ~core/labstartupmgr.py script if not running
 
 # if not deployed by VLP exit
@@ -13,7 +14,7 @@ fi
 maincon="mainconsole"
 while true; do
 	echo "Pinging Main Console..."
-	ping -c 4 $maincon > /dev/null
+	ping -c 4 "${maincon}" > /dev/null
 	if [ $? = 0 ];then
 		echo "Main Console is responding"
 		break
@@ -24,16 +25,14 @@ while true; do
 done
 while true; do
 	date=$(date)
-	status=$(ps -ef | grep labstartupmgr.py | grep -v grep)
-	if [ $? != 0 ];then
+	if ! pgrep -f "labstartupmgr.py" > /dev/null; then
 		echo "$date need to restart labstartupmgr.py" >> /tmp/restartlsmgr.log
 		mv /tmp/labstartupmgr.log /tmp/labstartupmgr.log.old
 		sudo -u core -b /home/core/hol/labstartupmgr.py >> /tmp/labstartupmgr.log
 		chown core /tmp/labstartupmgr.log
 	fi
 	sleep 5
-	delete=$(grep delete /tmp/labstartupmgr.log)
-	if [ $? = 0 ];then
+	if grep -q "delete" /tmp/labstartupmgr.log; then
 		echo "$date Delete detected. Killing labstartupmgr.py" >> /tmp/restartlsmgr.log
 		/usr/bin/pkill labs
 		exit 0
