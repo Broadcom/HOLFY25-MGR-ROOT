@@ -171,7 +171,7 @@ fi
 
 ########## Begin console connectivity check ##########
 # Wait for console to be reachable
-if ! retry_with_timeout ${MAX_PING_ATTEMPTS} ${PING_RETRY_DELAY} \
+if ! retry_with_timeout "${MAX_PING_ATTEMPTS}" "${PING_RETRY_DELAY}" \
     "Ping console ${MAINCON}" \
     "ping -c 4 ${MAINCON} > /dev/null 2>&1"; then
     mark_mount_failed "Console ${MAINCON} not reachable after ${MAX_PING_ATTEMPTS} attempts"
@@ -249,9 +249,9 @@ if [ $LMC = true ];then
    # remove the manager bookmark from nautilus
    if [ "${vlp_cloud}" != "NOT REPORTED" ] && [ ${lock} ];then
       echo "Removing manager bookmark from Nautilus."
-      sshpass -p ${password} scp "${sshoptions}" ${lmcbookmarks} /root/bookmarks.orig
+      sshpass -p "${password}" scp "${sshoptions}" ${lmcbookmarks} /root/bookmarks.orig
       cat bookmarks.orig | grep -vi manager > /root/bookmarks
-      sshpass -p ${password} scp "${sshoptions}" /root/bookmarks ${lmcbookmarks}
+      sshpass -p "${password}" scp "${sshoptions}" /root/bookmarks ${lmcbookmarks}
    else
       echo "Not removing manager bookmark from Nautilus."
    fi
